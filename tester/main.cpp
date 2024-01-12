@@ -84,6 +84,8 @@ void list_test2()
 	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
 	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
 	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+
+	return;
 }
 
 void list_test3()
@@ -112,6 +114,8 @@ void list_test4()
 	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
 	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
 	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+
+	return;
 }
 
 void vector_test1()
@@ -189,10 +193,12 @@ int main()
 		#endif
 	#endif
 #endif
+	
+	
 	std::vector<double> l, v;
 
 	constexpr int M = 10;
-    constexpr int N = 10000;
+    constexpr int N = 1000;
 
 	std::thread th1(benchmark_what<M, N>, list_test1, std::ref(l));
 	std::thread th2(benchmark_what<M, N>, vector_test1, std::ref(v));

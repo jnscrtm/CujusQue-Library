@@ -264,7 +264,7 @@ namespace CQue
                 if(add_count > _Capacity - _Size)
                 {
                     T* new_Elems = new T[_Capacity = _Size + add_count];
-
+                    
                     std::move(_Elems, &_Elems[index], new_Elems);
                     std::move(&_Elems[index], &_Elems[_Size], &new_Elems[index+add_count]);
                     delete[] _Elems;
@@ -284,15 +284,14 @@ namespace CQue
         template <Iterable<T> _It>
         constexpr void InsertRange(std::size_t index, _It&& what)
         {
-            if(index == _Size)
+            if (index == _Size)
                 this->AddRange(what);
             else if(index < _Size)
             {
                 std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
                 if(add_count > _Capacity - _Size)
                 {
-                    T* new_Elems = new T[_Size + add_count];
-                    _Capacity = _Size + add_count;
+                    T* new_Elems = new T[_Capacity = (_Size + add_count) * 2];
 
                     std::move(_Elems, &_Elems[index], new_Elems);
                     std::move(&_Elems[index], &_Elems[_Size], &new_Elems[index+add_count]);
@@ -300,7 +299,7 @@ namespace CQue
                     _Elems = new_Elems;
                 }
                 else
-                    std::move_backward(&_Elems[index], &_Elems[_Size], &_Elems[index+add_count]);
+                    std::move_backward(&_Elems[index], &_Elems[_Size], &_Elems[_Size+add_count]);
                 
                 std::move(what.begin(), what.end(), &_Elems[index]);
                 _Size += add_count;
