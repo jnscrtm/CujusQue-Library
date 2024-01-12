@@ -6,10 +6,10 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
-project ("Cujusque.TypeTag")
+project ("Cujusque.TypeTag" CXX)
 
 include_directories("${Cujusque_SOURCE_DIR}/include")
-add_library(TypeTag STATIC "TypeTag.cpp")
-set_target_properties(TypeTag PROPERTIES PUBLIC_HEADER "${Cujusque_SOURCE_DIR}/include/TypeTag.hpp")
+add_library(CQueTypeTag STATIC "TypeTag.cpp")
+set_target_properties(CQueTypeTag PROPERTIES PUBLIC_HEADER "${Cujusque_SOURCE_DIR}/include/TypeTag.hpp")
 
-install(TARGETS TypeTag PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
+install(TARGETS CQueTypeTag PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_PREFIX}/include")
