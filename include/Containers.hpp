@@ -77,7 +77,7 @@ namespace CQue
             std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
 
             if(add_count > _Capacity - _Size)
-                _Reallocate(_Size + add_count);
+                _Reallocate(_Size * 2 + add_count);
 
             std::copy(what.begin(), what.end(), &_Elems[_Size]);
             _Size += add_count;
@@ -89,7 +89,7 @@ namespace CQue
             std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
 
             if(add_count > _Capacity - _Size)
-                _Reallocate(_Size + add_count);
+                _Reallocate(_Size * 2 + add_count);
 
             std::move(what.begin(), what.end(), &_Elems[_Size]);
             _Size += add_count;
@@ -263,7 +263,7 @@ namespace CQue
                 // The move is split into two parts for more efficiency: items before the place of insertion and those after
                 if(add_count > _Capacity - _Size)
                 {
-                    T* new_Elems = new T[_Capacity = _Size + add_count];
+                    T* new_Elems = new T[_Capacity = _Size * 2 + add_count];
                     
                     std::move(_Elems, &_Elems[index], new_Elems);
                     std::move(&_Elems[index], &_Elems[_Size], &new_Elems[index+add_count]);
@@ -285,13 +285,13 @@ namespace CQue
         constexpr void InsertRange(std::size_t index, _It&& what)
         {
             if (index == _Size)
-                this->AddRange(what);
+                this->AddRange(std::move(what));
             else if(index < _Size)
             {
                 std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
                 if(add_count > _Capacity - _Size)
                 {
-                    T* new_Elems = new T[_Capacity = (_Size + add_count) * 2];
+                    T* new_Elems = new T[_Capacity = _Size * 2 + add_count];
 
                     std::move(_Elems, &_Elems[index], new_Elems);
                     std::move(&_Elems[index], &_Elems[_Size], &new_Elems[index+add_count]);

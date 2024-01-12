@@ -174,6 +174,34 @@ void vector_test4()
 	lst.insert(lst.begin(), _Arr, &_Arr[32]);
 }
 
+void FInsTest()
+{
+	CQue::List<int> lst;
+
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
+}
+
+void BInsTest()
+{
+	CQue::List<int> lst;
+
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
+}
+
 int main()
 {
 #ifdef _MSC_VER
@@ -193,12 +221,10 @@ int main()
 		#endif
 	#endif
 #endif
-	
-	
-	std::vector<double> l, v;
-
 	constexpr int M = 10;
-    constexpr int N = 1000;
+	constexpr int N = 10000;
+
+	std::vector<double> l, v;
 
 	std::thread th1(benchmark_what<M, N>, list_test1, std::ref(l));
 	std::thread th2(benchmark_what<M, N>, vector_test1, std::ref(v));
@@ -211,8 +237,8 @@ int main()
 
 	std::cout << '\n';
 
-	th1 = std::thread(benchmark_what<M, N>, list_test1, std::ref(l));
-	th2 = std::thread(benchmark_what<M, N>, vector_test1, std::ref(v));
+	th1 = std::thread(benchmark_what<M, N>, list_test2, std::ref(l));
+	th2 = std::thread(benchmark_what<M, N>, vector_test2, std::ref(v));
 
 	th1.join();
 	th2.join();
