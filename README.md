@@ -1,5 +1,9 @@
 # CujusQue Library
-"Cujusque" is the genitive form of a Latin pronoun "quisque", which means "every one", "each one", or "whoever". Living up to that name, this library is a repository where the author will just send anything he feels like at the moment. The overaching namespace for the library is `CQue`, a shortened version of "**C**ujus**Que**". This library is implemented using C++20 standard. As it stands, it has two major parts: type handling and containers.
+"Cujusque" is the genitive form of a Latin pronoun "quisque", which means "every one", "each one", or "whoever". Living up to that name, this library is a repository where the author will just send anything he feels like at the moment. The overaching namespace for the library is `CQue`, a shortened version of "**C**ujus**Que**". 
+
+The project structure is still a mess at this point and the author is still trying to figure out the best arrangement, so one may occasionally see changes in folders and even `CMakeLists.txt`.
+
+As it stands, it has two major parts: type handling and containers.
 
 ## 1. Type Handling
 Handles problems related to data types and their information. Currently consists of two major classes:
