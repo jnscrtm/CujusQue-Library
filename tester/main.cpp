@@ -5,10 +5,37 @@
 #include <chrono>
 #include <iomanip>
 #include <numeric>
+#include <cmath>
 
 #include "CQue.hpp"
 
 using namespace CQue;
+
+constexpr double Sqrt(double a)
+{
+	double x = a;
+	double x_prev = 0.0;
+	while(x != x_prev)
+	{
+		x_prev = x;
+		x = 0.5 * (x + a/x);
+	}
+	return x;
+}
+
+constexpr double Square(double a)
+{
+	return a * a;
+}
+
+constexpr double Sum(double(*term)(std::size_t n), std::size_t start_index, std::size_t end_index)
+{
+	double res = 0.0;
+	for(std::size_t i = start_index; i <= end_index; i++)
+		res += term(i);
+
+	return res;
+}
 
 void generate_report(const std::string& test_title, int NTry, int NRepPerTry, std::vector<double>& intervals)
 {
@@ -19,12 +46,21 @@ void generate_report(const std::string& test_title, int NTry, int NRepPerTry, st
     double total_duration = std::accumulate(intervals.begin(), intervals.end(), 0.0);
     std::sort(intervals.begin(), intervals.end());
 
+	double sd;
+
     std::cout << "Try count               : " << NTry << '\n';
     std::cout << "Repetitions per try     : " << NRepPerTry << '\n';
     std::cout << "Shortest execution time : " << intervals[0] << "ms\n";
     std::cout << "Longest execution time  : " << intervals[NTry-1] << "ms\n";
     std::cout << "Average execution time  : " << total_duration/NTry << "ms\n";
-    std::cout << "Sum of execution times  : " << total_duration << "ms\n";
+    std::cout << "Standard deviation      : " << (sd = ([&]() -> double {
+		double res = 0.0;
+		for(std::size_t i = 0; i < NTry; i++)
+			res += Square(intervals[i] - total_duration/NTry);
+
+		return Sqrt(res/NTry);
+		})()) << "ms\n";
+	std::cout << "Relative uncertainty    : " << (sd/total_duration * NTry * 100.0) << "%\n";
     std::cout << std::string(80, '-') << '\n';
 }
 
@@ -174,36 +210,12 @@ void vector_test4()
 	lst.insert(lst.begin(), _Arr, &_Arr[32]);
 }
 
-void FInsTest()
-{
-	CQue::List<int> lst;
-
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.InsertRange(0, IterWrapper<int>(_Arr, &_Arr[32]));
-}
-
-void BInsTest()
-{
-	CQue::List<int> lst;
-
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-	lst.AddRange(IterWrapper<int>(_Arr, &_Arr[32]));
-}
-
 int main()
 {
+	constexpr auto what = []() -> auto {
+		CQue::List<int> lst = std::initializer_list<int>{1, 2, 3};
+		return lst[1];
+		}();
 #ifdef _MSC_VER
 	std::cout << "(Windows 11, MSVC x64, /O2 Optimized)\n\n";
 #elif defined(__GNUC__)

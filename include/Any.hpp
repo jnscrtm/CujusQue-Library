@@ -4,7 +4,7 @@
 
 namespace CQue
 {
-	/// FORWARD DECLARATIONS
+	// ####################################### FORWARD DECLARATIONS #######################################
 
 	class Any
 	{
@@ -54,26 +54,12 @@ namespace CQue
 			constexpr _ValueStorageImpl(const _ValueStorageImpl<T>&) noexcept(std::is_nothrow_copy_constructible_v<T>) requires std::is_copy_constructible_v<T> = default;
 			constexpr _ValueStorageImpl(_ValueStorageImpl<T>&&) noexcept(std::is_nothrow_move_constructible_v<T>) requires std::is_move_constructible_v<T> = default;
 
-			constexpr _ValueStorageImpl(const T& val) noexcept(std::is_nothrow_copy_constructible_v<T>) requires std::is_copy_constructible_v<T> : Value(val) {}
-			constexpr _ValueStorageImpl(T&& val) noexcept(std::is_nothrow_move_constructible_v<T>) requires std::is_move_constructible_v<T> : Value(std::move(val)) {}
+			constexpr _ValueStorageImpl(const T& val) noexcept(std::is_nothrow_copy_constructible_v<T>) requires std::is_copy_constructible_v<T>;
+			constexpr _ValueStorageImpl(T&& val) noexcept(std::is_nothrow_move_constructible_v<T>) requires std::is_move_constructible_v<T>;
 
-			virtual constexpr void AssignCopyTo(_ValueStorage* other) const override
-			{
-				if (other->GetTypeTag() == this->GetTypeTag())
-					static_cast<_ValueStorageImpl<T>*>(other)->Value = Value;
-				else
-					throw std::logic_error("Bruh");
-			}
-
-			virtual constexpr _ValueStorage* CreateCopy() const override
-			{
-				return new _ValueStorageImpl<T>(Value);
-			}
-
-			virtual constexpr const TypeTag& GetTypeTag() const noexcept override
-			{
-				return TypeTag::_TagGenerator<std::decay_t<T>>::Tag;
-			}
+			virtual constexpr void AssignCopyTo(_ValueStorage* other) const override;
+			virtual constexpr _ValueStorage* CreateCopy() const override;
+			virtual constexpr const TypeTag& GetTypeTag() const noexcept override;
 
 			virtual constexpr ~_ValueStorageImpl() = default;
 
@@ -97,9 +83,9 @@ namespace CQue
 		_ValueStorage* _ptrInstance;
 	};
 
-	// ####################################### BODY DECLARATIONS ##########################################
+	// ######################################## BODY DECLARATIONS #########################################
 
-	// ********************************************* Any *********************************************
+	// *********************************************** Any ************************************************
 
 	constexpr Any::Any() noexcept : _ptrInstance(nullptr) {}
 	constexpr Any::Any(const Any& other) : _ptrInstance(other._ptrInstance->CreateCopy()) {}
@@ -211,5 +197,34 @@ namespace CQue
 	constexpr Any::~Any()
 	{
 		delete _ptrInstance;
+	}
+
+	// *********************************** Any::_ValueDescriptorImpl<T> ***********************************
+
+	template <class T>
+	constexpr Any::_ValueStorageImpl<T>::_ValueStorageImpl(const T& val) noexcept(std::is_nothrow_copy_constructible_v<T>) requires std::is_copy_constructible_v<T> : Value(val) {}
+
+	template <class T>
+	constexpr Any::_ValueStorageImpl<T>::_ValueStorageImpl(T&& val) noexcept(std::is_nothrow_move_constructible_v<T>) requires std::is_move_constructible_v<T> : Value(std::move(val)) {}
+
+	template <class T>
+	constexpr void Any::_ValueStorageImpl<T>::AssignCopyTo(_ValueStorage* other) const
+	{
+		if (other->GetTypeTag() == this->GetTypeTag())
+			static_cast<_ValueStorageImpl<T>*>(other)->Value = Value;
+		else
+			throw std::logic_error("Bruh");
+	}
+
+	template <class T>
+	constexpr Any::_ValueStorage* Any::_ValueStorageImpl<T>::CreateCopy() const
+	{
+		return new _ValueStorageImpl<T>(Value);
+	}
+
+	template <class T>
+	constexpr const TypeTag& Any::_ValueStorageImpl<T>::GetTypeTag() const noexcept
+	{
+		return TypeTag::_TagGenerator<std::decay_t<T>>::Tag;
 	}
 };

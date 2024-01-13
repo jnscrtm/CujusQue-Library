@@ -11,10 +11,10 @@ namespace CQue
 
 		std::uint64_t GetID() const noexcept;
 
+		friend class Any;
+
 		template <class T>
 		friend constexpr const TypeTag& GetType() noexcept;
-
-		friend class Any;
 
 	private:
 		constexpr TypeTag() noexcept = default;
