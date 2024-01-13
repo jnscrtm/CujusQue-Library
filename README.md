@@ -4,7 +4,7 @@
 ## 1. Type Handling
 Handles problems related to data types and their information. Currently consists of two major classes:
 ### 1.1. Custom Implementation of Type Information (`CQue::TypeTag`)
-Uniquely identifies each data type. The const reference to the corresponding `CQue::TypeTag` object of a type can be obtained through the method `CQue::GetType<T>()` The declared constructor is made private and the copy constructor (and implicitly also the move constructor) is explicitly deleted to ensure the uniqueness of each type's corresponding `CQue::TypeTag` object. `constexpr`-friendly for the most part except the `GetID()` method.
+Uniquely identifies each data type. The const reference to the corresponding `CQue::TypeTag` object of a type can be obtained through the method `CQue::GetType<T>()` The declared constructor is made private and the copy constructor (and implicitly also the move constructor) is explicitly deleted to ensure the uniqueness of each type's corresponding `CQue::TypeTag` object. The implementation is only a bit past bare minimum and hence may not be able to perform more advanced tasks that are expected of it. `constexpr`-friendly for the most part except the `GetID()` method.
 
 P.S., Do keep in mind that one may simply use the provided equality operator to compare two `CQue::TypeTag`s instead of comparing the ID. 
 ### 1.2. Type Erasure (`CQue::Any`)
