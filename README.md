@@ -12,7 +12,7 @@ Uniquely identifies each data type. The const reference to the corresponding `CQ
 
 P.S., Do keep in mind that one may simply use the provided equality operator to compare two `CQue::TypeTag`s instead of comparing the ID. 
 ### 1.2. Type Erasure (`CQue::Any`)
-Capable of storing a data regardless of its underlying type under "one single roof". Since the use of standard C++ type information will disallow any remaining attempt to make it usable within `constexpr` evaluation, this class (indirectly) uses `CQue::TypeTag` to identify each element instead of `std::type_info`. Whilst `CQue::Any` cannot be itself used for declaring a `constexpr` variable, it can be used within a `constexpr` function or any evaluation under `constexpr` context. `constexpr`-friendly.
+Capable of storing a data regardless of its underlying type under "one single roof" as long as the said type is copyable and movable. Since the use of standard C++ type information will disallow any remaining attempts to make it usable within `constexpr` evaluation, this class (indirectly) uses `CQue::TypeTag` to identify each element instead of `std::type_info`. Whilst `CQue::Any` cannot be itself used for declaring a `constexpr` variable, it can be used within a `constexpr` function or any evaluation under `constexpr` context. `constexpr`-friendly.
 
 ## 2. Containers
 Handles problems related to collection of data. Many of the names used are unashamedly given due to .NET generic collection library. Currently consists of two major classes:
