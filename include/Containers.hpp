@@ -162,7 +162,7 @@ namespace CQue
         std::size_t _Count;
         T* _Elems;
 
-        Allocator _Alloc{};
+        static inline Allocator _Alloc{};
     };
 
     // ######################################## BODY DECLARATIONS #########################################
