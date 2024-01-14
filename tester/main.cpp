@@ -210,6 +210,18 @@ void vector_test4()
 	lst.insert(lst.begin(), _Arr, &_Arr[32]);
 }
 
+class Foo
+{
+private:
+	int a;
+public:
+	constexpr Foo() noexcept : a(0) {}
+	constexpr Foo(int i) : a(i) {}
+	Foo(const Foo&) {}
+};
+
+
+
 int main()
 {
 	constexpr auto what = []() -> auto {

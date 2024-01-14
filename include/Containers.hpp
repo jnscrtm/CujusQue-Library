@@ -51,14 +51,14 @@ namespace CQue
         constexpr const T* begin() const noexcept;
         constexpr const T* end() const noexcept;
     private:
-        T* _First, *_Last;
+        T* _First, * _Last;
     };
 
     /// @brief Not really an allocator class, but may be used within the library as a marker that
     /// the container wants allocation directly using new-delete operators, in case of which the type
     /// needs to be default initializable
     template <class T>
-    class NonAllocator 
+    class NonAllocator
     {
     public:
         T* allocate(std::size_t) { throw std::logic_error(""); return nullptr; }
@@ -68,17 +68,15 @@ namespace CQue
     /// @brief A contiguous, array-based collection equipped with indexing and some helper methods.
     /// The member functions' names are unashamedly given due to .NET generic collection library.
     /// @tparam T 
-    template <class T>
+    template <class T, class Allocator = std::allocator<T>>
     class List
     {
     public:
-        using Allocator = std::allocator<T>;
-
         // Constructors
 
         constexpr List() noexcept;
-        constexpr List(const List<T>& other) noexcept(std::is_nothrow_copy_constructible_v<T>);
-        constexpr List(List<T>&& other) noexcept;
+        constexpr List(const List<T, Allocator>& other) noexcept(std::is_nothrow_copy_constructible_v<T>);
+        constexpr List(List<T, Allocator>&& other) noexcept;
 
         constexpr List(std::size_t initial_size) noexcept(std::is_nothrow_default_constructible_v<T>) requires std::default_initializable<T>;
 
@@ -98,7 +96,7 @@ namespace CQue
         constexpr std::size_t Count() const noexcept;
         constexpr bool Exists(Predicate<const T&> match) const;
         constexpr const T& Find(Predicate<const T&> match) const;
-        constexpr List<T> FindAll(Predicate<const T&> match) const;
+        constexpr List<T, Allocator> FindAll(Predicate<const T&> match) const;
         constexpr std::size_t FindIndex(Predicate<const T&> match) const;
         constexpr const T& FindLast(Predicate<const T&> match) const;
         constexpr std::size_t FindLastIndex(Predicate<const T&> match) const;
@@ -139,15 +137,15 @@ namespace CQue
         constexpr T* end() const noexcept;
         constexpr const T* cbegin() const noexcept;
         constexpr const T* cend() const noexcept;
-        
+
         // Operators
 
-        constexpr List<T>& operator=(const List<T>& other);
-        constexpr List<T>& operator=(List<T>&& other);
+        constexpr List<T, Allocator>& operator=(const List<T, Allocator>& other);
+        constexpr List<T, Allocator>& operator=(List<T, Allocator>&& other);
 
         constexpr T& operator[](std::size_t index);
         constexpr const T& operator[](std::size_t index) const;
-        constexpr bool operator==(const List<T>& other) const requires std::equality_comparable<T>;
+        constexpr bool operator==(const List<T, Allocator>& other) const requires std::equality_comparable<T>;
 
         // Destructor
 
@@ -174,7 +172,7 @@ namespace CQue
     template <class T>
     constexpr IterWrapper<T>::IterWrapper(T* first, T* last) noexcept : _First(first), _Last(last) {}
 
-    template <class T> 
+    template <class T>
     template <Iterable<T> _It>
     constexpr IterWrapper<T>::IterWrapper(const _It& iter) noexcept : _First((T*)iter.begin()), _Last((T*)iter.end()) {}
 
@@ -188,32 +186,32 @@ namespace CQue
 
 
 
-    // ********************************************* List<T> **********************************************
+    // ********************************************* List<T, Allocator> **********************************************
 
-    // List<T> - Constructors
+    // List<T, Allocator> - Constructors
 
-    template <class T>
-    constexpr List<T>::List() noexcept : _Capacity(0), _Count(0), _Elems(nullptr) {}
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>::List() noexcept : _Capacity(0), _Count(0), _Elems(nullptr) {}
 
-    template <class T>
-    constexpr List<T>::List(const List<T>& other) noexcept(std::is_nothrow_copy_constructible_v<T>) : _Capacity(other._Count), _Count(other._Count), _Elems(other._Elems ? _Alloc.allocate(other._Count) : nullptr) 
-    { 
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>::List(const List<T, Allocator>& other) noexcept(std::is_nothrow_copy_constructible_v<T>) : _Capacity(other._Count), _Count(other._Count), _Elems(other._Elems ? _Alloc.allocate(other._Count) : nullptr)
+    {
         for (std::size_t i = 0; i < other._Count; i++)
             std::construct_at(&_Elems[i], other._Elems[i]);
     }
 
-    template <class T>
-    constexpr List<T>::List(List<T>&& other) noexcept : _Capacity(std::exchange(other._Capacity, 0)), _Count(std::exchange(other._Count, 0)), _Elems(std::exchange(other._Elems, nullptr)) {}
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>::List(List<T, Allocator>&& other) noexcept : _Capacity(std::exchange(other._Capacity, 0)), _Count(std::exchange(other._Count, 0)), _Elems(std::exchange(other._Elems, nullptr)) {}
 
-    template <class T>
-    constexpr List<T>::List(std::size_t initial_size) noexcept(std::is_nothrow_default_constructible_v<T>) requires std::default_initializable<T> : _Capacity(initial_size), _Count(initial_size), _Elems(_Alloc.allocate(initial_size))
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>::List(std::size_t initial_size) noexcept(std::is_nothrow_default_constructible_v<T>) requires std::default_initializable<T> : _Capacity(initial_size), _Count(initial_size), _Elems(_Alloc.allocate(initial_size))
     {
         UninitializedDefaultConstruct(_Elems, initial_size);
     }
 
-    template <class T>
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr List<T>::List(const _It& lst) noexcept(std::is_nothrow_copy_constructible_v<T>)
+    constexpr List<T, Allocator>::List(const _It& lst) noexcept(std::is_nothrow_copy_constructible_v<T>)
     {
         _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
         _Elems = _Alloc.allocate(_Capacity);
@@ -221,9 +219,9 @@ namespace CQue
         UninitializedCopy(lst.begin(), lst.end(), _Elems);
     }
 
-    template <class T> 
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr List<T>::List(_It&& lst) noexcept(std::is_nothrow_move_constructible_v<T>)
+    constexpr List<T, Allocator>::List(_It&& lst) noexcept(std::is_nothrow_move_constructible_v<T>)
     {
         _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
         _Elems = _Alloc.allocate(_Capacity);
@@ -231,10 +229,10 @@ namespace CQue
         UninitializedMove(lst.begin(), lst.end(), _Elems);
     }
 
-    // List<T> - Non-Template Member Functions
+    // List<T, Allocator> - Non-Template Member Functions
 
-    template <class T>
-    constexpr void List<T>::Add(const T& what) noexcept(std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_move_assignable_v<T>)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Add(const T& what) noexcept(std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_move_assignable_v<T>)
     {
         if (_Count == _Capacity)
         {
@@ -247,8 +245,8 @@ namespace CQue
         std::construct_at(&_Elems[_Count++], what);
     }
 
-    template <class T>
-    constexpr void List<T>::Add(T&& what) noexcept(std::is_nothrow_move_assignable_v<T>)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Add(T&& what) noexcept(std::is_nothrow_move_assignable_v<T>)
     {
         if (_Count == _Capacity)
         {
@@ -261,21 +259,21 @@ namespace CQue
         std::construct_at(&_Elems[_Count++], std::move(what));
     }
 
-    template <class T>
-    constexpr std::size_t List<T>::Capacity() const noexcept
+    template <class T, class Allocator>
+    constexpr std::size_t List<T, Allocator>::Capacity() const noexcept
     {
         return _Capacity;
     }
 
-    template <class T>
-    constexpr void List<T>::Clear() noexcept(std::is_nothrow_destructible_v<T>)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Clear() noexcept(std::is_nothrow_destructible_v<T>)
     {
         std::destroy_n(_Elems, _Count);
         _Count = 0;
     }
 
-    template <class T>
-    constexpr bool List<T>::Contains(const T& what) const noexcept(std::declval<T>() == std::declval<T>()) requires std::equality_comparable<T>
+    template <class T, class Allocator>
+    constexpr bool List<T, Allocator>::Contains(const T& what) const noexcept(std::declval<T>() == std::declval<T>()) requires std::equality_comparable<T>
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (_Elems[i] == what)
@@ -284,14 +282,14 @@ namespace CQue
         return false;
     }
 
-    template <class T>
-    constexpr std::size_t List<T>::Count() const noexcept
+    template <class T, class Allocator>
+    constexpr std::size_t List<T, Allocator>::Count() const noexcept
     {
         return _Count;
     }
 
-    template <class T>
-    constexpr bool List<T>::Exists(Predicate<const T&> match) const
+    template <class T, class Allocator>
+    constexpr bool List<T, Allocator>::Exists(Predicate<const T&> match) const
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (match(_Elems[i]))
@@ -300,8 +298,8 @@ namespace CQue
         return false;
     }
 
-    template <class T>
-    constexpr const T& List<T>::Find(Predicate<const T&> match) const
+    template <class T, class Allocator>
+    constexpr const T& List<T, Allocator>::Find(Predicate<const T&> match) const
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (match(_Elems[i]))
@@ -310,10 +308,10 @@ namespace CQue
         return T();
     }
 
-    template <class T>
-    constexpr List<T> List<T>::FindAll(Predicate<const T&> match) const
+    template <class T, class Allocator>
+    constexpr List<T, Allocator> List<T, Allocator>::FindAll(Predicate<const T&> match) const
     {
-        List<T> res;
+        List<T, Allocator> res;
         for (std::size_t i = 0; i < _Count; i++)
             if (match(_Elems[i]))
                 res.Add(_Elems[i]);
@@ -321,8 +319,8 @@ namespace CQue
         return res;
     }
 
-    template <class T>
-    constexpr std::size_t List<T>::FindIndex(Predicate<const T&> match) const
+    template <class T, class Allocator>
+    constexpr std::size_t List<T, Allocator>::FindIndex(Predicate<const T&> match) const
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (match(_Elems[i]))
@@ -331,8 +329,8 @@ namespace CQue
         return (std::size_t)(-1);
     }
 
-    template <class T>
-    constexpr const T& List<T>::FindLast(Predicate<const T&> match) const
+    template <class T, class Allocator>
+    constexpr const T& List<T, Allocator>::FindLast(Predicate<const T&> match) const
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (match(_Elems[_Count - i - 1]))
@@ -341,8 +339,8 @@ namespace CQue
         return T();
     }
 
-    template <class T>
-    constexpr std::size_t List<T>::FindLastIndex(Predicate<const T&> match) const
+    template <class T, class Allocator>
+    constexpr std::size_t List<T, Allocator>::FindLastIndex(Predicate<const T&> match) const
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (match(_Elems[_Count - i - 1]))
@@ -351,8 +349,8 @@ namespace CQue
         return (std::size_t)(-1);
     }
 
-    template <class T>
-    constexpr std::size_t List<T>::IndexOf(const T& what) const noexcept
+    template <class T, class Allocator>
+    constexpr std::size_t List<T, Allocator>::IndexOf(const T& what) const noexcept
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (_Elems[i] == what)
@@ -361,8 +359,8 @@ namespace CQue
         return -1;
     }
 
-    template <class T>
-    constexpr void List<T>::Insert(std::size_t index, const T& what)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Insert(std::size_t index, const T& what)
     {
         if (index == _Count)
             this->Add(what);
@@ -377,7 +375,7 @@ namespace CQue
                 UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[index + 1]);
 
                 _Release();
-                
+
                 _Elems = new_Elems;
                 _Capacity *= 2;
             }
@@ -392,8 +390,8 @@ namespace CQue
         }
     }
 
-    template <class T>
-    constexpr void List<T>::Insert(std::size_t index, T&& what)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Insert(std::size_t index, T&& what)
     {
         if (index == _Count)
             this->Add(std::move(what));
@@ -425,8 +423,8 @@ namespace CQue
             throw std::out_of_range("index");
     }
 
-    template <class T>
-    constexpr std::size_t List<T>::LastIndexOf(const T& what) const noexcept
+    template <class T, class Allocator>
+    constexpr std::size_t List<T, Allocator>::LastIndexOf(const T& what) const noexcept
     {
         for (std::size_t i = 0; i < _Count; i++)
             if (_Elems[_Count - i - 1] == what)
@@ -435,8 +433,8 @@ namespace CQue
         return -1;
     }
 
-    template <class T>
-    constexpr bool List<T>::Remove(const T& what) noexcept
+    template <class T, class Allocator>
+    constexpr bool List<T, Allocator>::Remove(const T& what) noexcept
     {
         try
         {
@@ -455,8 +453,8 @@ namespace CQue
         }
     }
 
-    template <class T>
-    constexpr void List<T>::RemoveAt(std::size_t index)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::RemoveAt(std::size_t index)
     {
         if (index < _Count)
         {
@@ -469,8 +467,8 @@ namespace CQue
             throw std::out_of_range("where");
     }
 
-    template <class T>
-    constexpr void List<T>::RemoveRange(std::size_t index, std::size_t count)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::RemoveRange(std::size_t index, std::size_t count)
     {
         if (index + count <= _Count)
         {
@@ -484,46 +482,46 @@ namespace CQue
             throw std::out_of_range("where");
     }
 
-    template <class T>
-    constexpr void List<T>::Resize(std::size_t n) noexcept requires std::default_initializable<T>
-    { 
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Resize(std::size_t n) noexcept requires std::default_initializable<T>
+    {
         if (n < _Count)
             std::destroy_n(&_Elems[_Count - n], n);
-            
+
         _Reallocate(_Count = n);
     }
 
-    template <class T>
-    constexpr void List<T>::Reverse() noexcept(std::is_nothrow_move_assignable_v<T>)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Reverse() noexcept(std::is_nothrow_move_assignable_v<T>)
     {
         for (std::size_t i = 0; i < _Count / 2; i++)
             _Elems[i] = std::exchange(_Elems[_Count - i - 1], _Elems[i]);
     }
 
-    template <class T>
-    constexpr void List<T>::Sort(Comparison<T> compare)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::Sort(Comparison<T> compare)
     {
         _HeapSort(compare);
     }
 
-    // List<T> - Template Member Functions
+    // List<T, Allocator> - Template Member Functions
 
-    template <class T> 
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr void List<T>::AddRange(const _It& what) noexcept(std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_move_assignable_v<T>)
+    constexpr void List<T, Allocator>::AddRange(const _It& what) noexcept(std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_move_assignable_v<T>)
     {
         std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
 
         if (add_count > _Capacity - _Count)
             _Reallocate(_Count * 2 + add_count);
-        
+
         UninitializedCopy(what.begin(), what.end(), &_Elems[_Count]);
         _Count += add_count;
     }
 
-    template <class T> 
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr void List<T>::AddRange(_It&& what) noexcept(std::is_nothrow_move_assignable_v<T>)
+    constexpr void List<T, Allocator>::AddRange(_It&& what) noexcept(std::is_nothrow_move_assignable_v<T>)
     {
         std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
 
@@ -534,9 +532,9 @@ namespace CQue
         _Count += add_count;
     }
 
-    template <class T> 
+    template <class T, class Allocator>
     template <class TOutput>
-    constexpr List<TOutput> List<T>::ConvertAll(Converter<T, TOutput> converter) const
+    constexpr List<TOutput> List<T, Allocator>::ConvertAll(Converter<T, TOutput> converter) const
     {
         List<TOutput> out(_Count);
         for (std::size_t i = 0; i < _Count; i++)
@@ -545,16 +543,16 @@ namespace CQue
         return out;
     }
 
-    template <class T> 
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr void List<T>::CopyTo(_It& where) const noexcept(std::is_nothrow_copy_assignable_v<T>)
+    constexpr void List<T, Allocator>::CopyTo(_It& where) const noexcept(std::is_nothrow_copy_assignable_v<T>)
     {
         std::copy(_Elems, &_Elems[_Count], where.begin());
     }
 
-    template <class T> 
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr void List<T>::InsertRange(std::size_t index, const _It& what)
+    constexpr void List<T, Allocator>::InsertRange(std::size_t index, const _It& what)
     {
         if (index == _Count)
             this->AddRange(what);
@@ -590,9 +588,9 @@ namespace CQue
             throw std::out_of_range("index");
     }
 
-    template <class T> 
+    template <class T, class Allocator>
     template <Iterable<T> _It>
-    constexpr void List<T>::InsertRange(std::size_t index, _It&& what)
+    constexpr void List<T, Allocator>::InsertRange(std::size_t index, _It&& what)
     {
         if (index == _Count)
             this->AddRange(std::move(what));
@@ -628,34 +626,34 @@ namespace CQue
             throw std::out_of_range("index");
     }
 
-    // List<T> - Iterators
+    // List<T, Allocator> - Iterators
 
-    template <class T>
-    constexpr T* List<T>::begin() const noexcept
+    template <class T, class Allocator>
+    constexpr T* List<T, Allocator>::begin() const noexcept
     {
         return _Elems;
     }
 
-    template <class T>
-    constexpr T* List<T>::end() const noexcept
+    template <class T, class Allocator>
+    constexpr T* List<T, Allocator>::end() const noexcept
     {
         return &_Elems[_Count];
     }
 
-    template <class T>
-    constexpr const T* List<T>::cbegin() const noexcept
+    template <class T, class Allocator>
+    constexpr const T* List<T, Allocator>::cbegin() const noexcept
     {
         return _Elems;
     }
 
-    template <class T>
-    constexpr const T* List<T>::cend() const noexcept
+    template <class T, class Allocator>
+    constexpr const T* List<T, Allocator>::cend() const noexcept
     {
         return &_Elems[_Count];
     }
 
-    template <class T>
-    constexpr List<T>& List<T>::operator=(const List<T>& other)
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>& List<T, Allocator>::operator=(const List<T, Allocator>& other)
     {
         if (_Capacity < other._Count)
         {
@@ -673,10 +671,10 @@ namespace CQue
         return *this;
     }
 
-    // List<T> - Operators
+    // List<T, Allocator> - Operators
 
-    template <class T>
-    constexpr List<T>& List<T>::operator=(List<T>&& other)
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>& List<T, Allocator>::operator=(List<T, Allocator>&& other)
     {
         if (_Elems)
             _Release();
@@ -688,8 +686,8 @@ namespace CQue
         return *this;
     }
 
-    template <class T>
-    constexpr T& List<T>::operator[](std::size_t index)
+    template <class T, class Allocator>
+    constexpr T& List<T, Allocator>::operator[](std::size_t index)
     {
         if (index < _Count)
             return _Elems[index];
@@ -697,8 +695,8 @@ namespace CQue
             throw std::out_of_range("index");
     }
 
-    template <class T>
-    constexpr const T& List<T>::operator[](std::size_t index) const
+    template <class T, class Allocator>
+    constexpr const T& List<T, Allocator>::operator[](std::size_t index) const
     {
         if (index < _Count)
             return _Elems[index];
@@ -706,8 +704,8 @@ namespace CQue
             throw std::out_of_range("index");
     }
 
-    template <class T>
-    constexpr bool List<T>::operator==(const List<T>& other) const requires std::equality_comparable<T>
+    template <class T, class Allocator>
+    constexpr bool List<T, Allocator>::operator==(const List<T, Allocator>& other) const requires std::equality_comparable<T>
     {
         if (_Count != other._Count)
             return false;
@@ -722,18 +720,18 @@ namespace CQue
         }
     }
 
-    // List<T> - Destructor
+    // List<T, Allocator> - Destructor
 
-    template <class T>
-    constexpr List<T>::~List() noexcept(std::is_nothrow_destructible_v<T>)
+    template <class T, class Allocator>
+    constexpr List<T, Allocator>::~List() noexcept(std::is_nothrow_destructible_v<T>)
     {
         _Release();
     }
 
-    // List<T> - Protected Member Functions
+    // List<T, Allocator> - Protected Member Functions
 
-    template <class T>
-    constexpr void List<T>::_Reallocate(std::size_t new_capacity) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::_Reallocate(std::size_t new_capacity) noexcept(std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_destructible_v<T>)
     {
         if (_Capacity == 0)
             _Elems = _Alloc.allocate(new_capacity);
@@ -749,15 +747,15 @@ namespace CQue
         _Capacity = new_capacity;
     }
 
-    template <class T>
-    constexpr void List<T>::_Release() noexcept(std::is_nothrow_destructible_v<T>)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::_Release() noexcept(std::is_nothrow_destructible_v<T>)
     {
         std::destroy_n(_Elems, _Count);
         _Alloc.deallocate(_Elems, _Capacity);
     }
 
-    template <class T>
-    constexpr void List<T>::_HeapSort(Comparison<T> compare)
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::_HeapSort(Comparison<T> compare)
     {
         std::size_t start = _Count / 2;
         std::size_t end = _Count;

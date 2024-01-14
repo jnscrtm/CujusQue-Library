@@ -13,6 +13,21 @@
 
 namespace CQue
 {
+    template<class Lambda, int = (Lambda{}(), 0) >
+    constexpr bool is_constexpr_evaluated_func(Lambda) { return true; }
+    constexpr bool is_constexpr_evaluated_func(...) { return false; }
+
+    template <class T>
+    constexpr bool is_default_constexpr_declarable = is_constexpr_evaluated_func([]() -> T { return T(); });
+
+    template <class T>
+    constexpr bool is_copy_default_constexpr_declarable = is_constexpr_evaluated_func([]() -> T { T a = T(); return T(a); });
+
+    template <class T>
+    constexpr bool is_move_default_constexpr_declarable = is_constexpr_evaluated_func([]() -> T { return T(T()); });
+
+
+
     template <class TFrom, class TWhat>
     concept DecayedSameAs = std::same_as<std::decay_t<TFrom>, std::decay_t<TWhat>>;
 
@@ -63,4 +78,20 @@ namespace CQue
 
     template <class T>
     using Comparison = std::partial_ordering(*)(const T& a, const T& b);
+
+
+
+    template <class T>
+    concept DefaultConstEvaluable = is_default_constexpr_declarable<T>;
+
+    template <class T>
+    concept CopyDefaultConstEvaluable = is_copy_default_constexpr_declarable<T>;
+
+    template <class T>
+    concept MoveDefaultConstEvaluable = is_move_default_constexpr_declarable<T>;
+
+
+
+    template <class T>
+    concept ConstEvaluable = DefaultConstEvaluable<T> && CopyDefaultConstEvaluable<T> && MoveDefaultConstEvaluable<T>;
 };
