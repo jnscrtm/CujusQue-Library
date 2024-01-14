@@ -1,4 +1,4 @@
-# CujusQue Library
+0# CujusQue Library
 "Cujusque" is the genitive form of a Latin pronoun "quisque", which means "every one", "each one", or "whoever". Living up to that name, this library is a repository where the author will just send anything he feels like at the moment. The overarching namespace for the library is `CQue`, a shortened version of "**C**ujus**Que**". 
 
 The project structure is still a ball of mess at this point and the author is still trying to figure out which one is the best arrangement so one may occasionally see changes in folders' placements, contents, or even `CMakeLists.txt`(s).
@@ -17,10 +17,10 @@ Capable of storing a data regardless of its underlying type under "one single ro
 ## 2. Containers
 Handles problems related to collection of data. Many of the names used are unashamedly given due to .NET generic collection library. Currently consists of two major classes:
 ### 2.1. Universal Container Manipulation (`namespace CQue::Container`)
-Provides methods to deal with containers. Not restricted to `CQue` container class(es) as long as the given type satisfies `CQue::Iterable<T>` concept.
+Provides methods to deal with containers. Not restricted to `CQue` container class(es) as long as the given type satisfies `CQue::IterableObjectOf<T, _Val>` or `CQue::Iterable<T>` concept.
 ### 2.2. Naive Reference Wrapper of Iterable Objects (`class CQue::IterWrapper<T>`)
-Binds to the iterators of the given iterable object as specified by `Iterable<T>` concept. Termed "naive" because it can only wrap around an iterable object whose iterators are convertible to raw pointers. `constexpr`-friendly.
+Binds to the iterators of the given iterable object as specified by `CQue::IterableObjectOf<T, _Val>` concept. Termed "naive" because it can only wrap around an iterable object whose iterators are convertible to raw pointers. `constexpr`-friendly.
 ### 2.2. Contiguous Container (`class CQue::List<T, Allocator>`)
 A contiguous, array-based collection equipped with indexer and some helper methods, e.g. sorting, searching, etc. Due to its nature, `List<T, Allocator>` can only accept objects that are default initializable, copyable, and movable. `Allocator` is defaulted to `std::allocator<T>`. `constexpr`-friendly.
-#### The Simpler Mechanism (`class CQue::SimpleList<T, Allocator>`)
-Similar to `CQue::List<T, Allocator>` except that `SimpleList<T>` does not use an allocator and instead uses `new[]` and `delete[]` operators directly. The type hence implicitly also needs to be default-initializable. Recommended for types whose sizes are effectifely fixed and which have no dynamic allocation involved, otherwise unrecommended as some things may lead to undefined behaviours or even fatal errors.
+#### The Simpler Mechanism (`class CQue::SimpleList<T>`)
+Similar to `CQue::List<T, Allocator>` except that `CQue::SimpleList<T>` does not use an allocator and instead uses `new[]` and `delete[]` operators directly. The type hence implicitly also needs to be default-initializable. Recommended for types whose sizes are effectifely fixed and which have no dynamic allocation involved, otherwise unrecommended as some things may lead to undefined behaviours or even fatal errors.
