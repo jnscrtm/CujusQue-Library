@@ -1,4 +1,4 @@
-0# CujusQue Library
+# CujusQue Library
 "Cujusque" is the genitive form of a Latin pronoun "quisque", which means "every one", "each one", or "whoever". Living up to that name, this library is a repository where the author will just send anything he feels like at the moment. The overarching namespace for the library is `CQue`, a shortened version of "**C**ujus**Que**". 
 
 The project structure is still a ball of mess at this point and the author is still trying to figure out which one is the best arrangement so one may occasionally see changes in folders' placements, contents, or even `CMakeLists.txt`(s).
