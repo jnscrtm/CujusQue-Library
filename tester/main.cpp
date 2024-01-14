@@ -222,14 +222,6 @@ public:
 
 int main()
 {
-	constexpr auto eval = []() {
-		SimpleList<int> lst = std::initializer_list<int> { 1, 4, 3, 4 };
-		lst.Sort();
-		return lst[0];
-
-		}();
-
-		return 0;
 #ifdef _MSC_VER
 	std::cout << "(Windows 11, MSVC x64, /O2 Optimized)\n\n";
 #elif defined(__GNUC__)
@@ -249,7 +241,7 @@ int main()
 #endif
 
 	constexpr int M = 10;
-	constexpr int N = 1000;
+	constexpr int N = 10000;
 
 	std::vector<double> l, v;
 
