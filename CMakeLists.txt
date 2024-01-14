@@ -12,11 +12,8 @@ project("Cujusque" CXX)
 
 include_directories("${Cujusque_SOURCE_DIR}/include")
 
-add_subdirectory("source/TypeTag")
-add_subdirectory("source/Any")
-
 add_library(Cujusque corelib.cpp)
-set_target_properties(Cujusque PROPERTIES PUBLIC_HEADER "${Cujusque_SOURCE_DIR}/include/CQue.hpp;${Cujusque_SOURCE_DIR}/include/base_include.hpp")
+set_target_properties(Cujusque PROPERTIES PUBLIC_HEADER "${Cujusque_SOURCE_DIR}/include/*.hpp")
 
 target_link_libraries(Cujusque 
 	PUBLIC CQueTypeTag 

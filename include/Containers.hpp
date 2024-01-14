@@ -54,6 +54,17 @@ namespace CQue
         T* _First, *_Last;
     };
 
+    /// @brief Not really an allocator class, but may be used within the library as a marker that
+    /// the container wants allocation directly using new-delete operators, in case of which the type
+    /// needs to be default initializable
+    template <class T>
+    class NonAllocator 
+    {
+    public:
+        T* allocate(std::size_t) noexcept { throw std::logic_error(""); return nullptr; }
+        void deallocate(T*, std::size_t) noexcept { throw std::logic_error(""); return; }
+    };
+
     /// @brief A contiguous, array-based collection equipped with indexing and some helper methods.
     /// The member functions' names are unashamedly given due to .NET generic collection library.
     /// @tparam T 
@@ -368,9 +379,9 @@ namespace CQue
             }
             else
             {
-                std::construct_at(&_Elems[_Count]);
-                std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count]);
-                std::construct_at(&_Elems[index], what);
+                std::construct_at(&_Elems[_Count], std::move(_Elems[_Count - 1]));
+                std::move_backward(&_Elems[index], &_Elems[_Count - 1], &_Elems[_Count - 1]);
+                _Elems[index] = what;
             }
 
             _Count++;
@@ -398,8 +409,8 @@ namespace CQue
             }
             else
             {
-                std::construct_at(&_Elems[_Count]);
-                std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count]);
+                std::construct_at(&_Elems[_Count], std::move(_Elems[_Count - 1]));
+                std::move_backward(&_Elems[index], &_Elems[_Count - 1], &_Elems[_Count - 1]);
                 _Elems[index] = std::move(what);
             }
 
