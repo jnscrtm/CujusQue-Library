@@ -214,8 +214,14 @@ int main()
 {
 	constexpr auto what = []() -> auto {
 		CQue::List<int> lst = std::initializer_list<int>{1, 2, 3};
-		return lst[1];
+		lst.Insert(0, 20);
+		lst.Insert(0, 20);
+		lst.Insert(0, 20);
+		lst.Insert(0, 20);
+		lst.Insert(0, 30);
+		return lst[0];
 		}();
+
 #ifdef _MSC_VER
 	std::cout << "(Windows 11, MSVC x64, /O2 Optimized)\n\n";
 #elif defined(__GNUC__)
@@ -233,8 +239,9 @@ int main()
 		#endif
 	#endif
 #endif
+
 	constexpr int M = 10;
-	constexpr int N = 10000;
+	constexpr int N = 1000;
 
 	std::vector<double> l, v;
 

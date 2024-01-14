@@ -6,6 +6,33 @@ namespace CQue
 {
     // ####################################### FORWARD DECLARATIONS #######################################
 
+    template <std::forward_iterator _OutputIterator>
+    constexpr _OutputIterator UninitializedDefaultConstruct(_OutputIterator _Dest, std::size_t n) noexcept(std::is_nothrow_default_constructible_v<std::remove_reference_t<decltype(*_Dest)>*>)
+    {
+        for (std::size_t i = 0; i < n; i++)
+            std::construct_at((std::remove_reference_t<decltype(*_Dest)>*) _Dest++);
+
+        return _Dest;
+    }
+
+    template <std::forward_iterator _InputIterator, std::forward_iterator _OutputIterator>
+    constexpr _OutputIterator UninitializedCopy(_InputIterator _First, _InputIterator _Last, _OutputIterator _Dest) noexcept(std::is_nothrow_copy_constructible_v<std::remove_reference_t<decltype(*_Dest)>*>)
+    {
+        for (_InputIterator cur = _First; cur < _Last; cur++)
+            std::construct_at((std::remove_reference_t<decltype(*_Dest)>*) _Dest++, *cur);
+
+        return _Dest;
+    }
+
+    template <std::forward_iterator _InputIterator, std::forward_iterator _OutputIterator>
+    constexpr _OutputIterator UninitializedMove(_InputIterator _First, _InputIterator _Last, _OutputIterator _Dest) noexcept(std::is_nothrow_move_constructible_v<std::remove_reference_t<decltype(*_Dest)>*>)
+    {
+        for (_InputIterator cur = _First; cur < _Last; cur++)
+            std::construct_at((std::remove_reference_t<decltype(*_Dest)>*) _Dest++, std::move(*cur));
+
+        return _Dest;
+    }
+
     /// @brief A naive, shallow wrapper class for referring to an iterable class whose iterators are convertible to or are themselves pointers.
     /// @tparam T Type of object(s) to be iterated upon
     template <class T>
@@ -21,8 +48,8 @@ namespace CQue
 
         // Iterators
 
-        constexpr T* begin() const noexcept;
-        constexpr T* end() const noexcept;
+        constexpr const T* begin() const noexcept;
+        constexpr const T* end() const noexcept;
     private:
         T* _First, *_Last;
     };
@@ -114,13 +141,15 @@ namespace CQue
         constexpr ~List() noexcept(std::is_nothrow_destructible_v<T>);
 
     protected:
-        constexpr void _Reallocate(std::size_t new_capacity) noexcept(std::is_nothrow_move_assignable_v<T>);
+        constexpr void _Reallocate(std::size_t new_capacity) noexcept(std::is_nothrow_move_constructible_v<T>&& std::is_nothrow_destructible_v<T>);
+        constexpr void _Release() noexcept(std::is_nothrow_destructible_v<T>);
         constexpr void _HeapSort(Comparison<T> compare = &DefaultCompare<T>);
 
         std::size_t _Capacity;
         std::size_t _Count;
         T* _Elems;
-        static inline Allocator _Alloc{};
+
+        Allocator _Alloc{};
     };
 
     // ######################################## BODY DECLARATIONS #########################################
@@ -139,10 +168,10 @@ namespace CQue
     // IterWrapper<T> - Iterators
 
     template <class T>
-    constexpr T* IterWrapper<T>::begin() const noexcept { return _First; }
+    constexpr const T* IterWrapper<T>::begin() const noexcept { return _First; }
 
     template <class T>
-    constexpr T* IterWrapper<T>::end() const noexcept { return _Last; }
+    constexpr const T* IterWrapper<T>::end() const noexcept { return _Last; }
 
 
 
@@ -166,8 +195,7 @@ namespace CQue
     template <class T, class Allocator>
     constexpr List<T, Allocator>::List(std::size_t initial_size) noexcept(std::is_nothrow_default_constructible_v<T>) : _Capacity(initial_size), _Count(initial_size), _Elems(_Alloc.allocate(initial_size)) 
     {
-        for (std::size_t i = 0; i < initial_size; i++)
-            std::construct_at(&_Elems[i]);
+        UninitializedDefaultConstruct(_Elems, initial_size);
     }
 
     template <class T, class Allocator> template <Iterable<T> _It>
@@ -176,8 +204,7 @@ namespace CQue
         _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
         _Elems = _Alloc.allocate(_Capacity);
 
-        for (std::size_t i = 0; i < static_cast<std::size_t>(lst.end() - lst.begin()); i++)
-            std::construct_at(&_Elems[i], *(lst.begin() + i));
+        UninitializedCopy(lst.begin(), lst.end(), _Elems);
     }
 
     template <class T, class Allocator> template <Iterable<T> _It>
@@ -186,8 +213,7 @@ namespace CQue
         _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
         _Elems = _Alloc.allocate(_Capacity);
 
-        for (std::size_t i = 0; i < static_cast<std::size_t>(lst.end() - lst.begin()); i++)
-            std::construct_at(&_Elems[i], std::move(*(lst.begin() + i)));
+        UninitializedMove(lst.begin(), lst.end(), _Elems);
     }
 
     // List<T, Allocator> - Non-Template Member Functions
@@ -331,56 +357,52 @@ namespace CQue
             {
                 T* new_Elems = _Alloc.allocate(_Capacity * 2);
 
-                for (std::size_t i = 0; i < index; i++)
-                    std::construct_at(&new_Elems[i], std::move(_Elems[i]));
+                UninitializedMove(_Elems, &_Elems[index], new_Elems);
+                std::construct_at(&new_Elems[index], what);
+                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[index + 1]);
 
-                for (std::size_t i = index; i < _Count; i++)
-                    std::construct_at(&new_Elems[i + 1], std::move(_Elems[i]));
-
-                std::destroy_n(_Elems, _Count);
-                _Alloc.deallocate(_Elems, _Capacity);
-
-                _Capacity *= 2;
+                _Release();
+                
                 _Elems = new_Elems;
+                _Capacity *= 2;
             }
             else
-                std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count + 1]);
+            {
+                std::construct_at(&_Elems[_Count]);
+                std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count]);
+                std::construct_at(&_Elems[index], what);
+            }
 
-            std::construct_at(&_Elems[index], what);
             _Count++;
         }
-
-        else
-            throw std::out_of_range("index");
     }
 
     template <class T, class Allocator>
     constexpr void List<T, Allocator>::Insert(std::size_t index, T&& what)
     {
         if (index == _Count)
-            this->Add(what);
+            this->Add(std::move(what));
         else if (index < _Count)
         {
             if (_Count == _Capacity)
             {
                 T* new_Elems = _Alloc.allocate(_Capacity * 2);
 
-                for (std::size_t i = 0; i < index; i++)
-                    std::construct_at(&new_Elems[i], std::move(_Elems[i]));
+                UninitializedMove(_Elems, &_Elems[index], new_Elems);
+                std::construct_at(&new_Elems[index], std::move(what));
+                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[index + 1]);
 
-                for (std::size_t i = index; i < _Count; i++)
-                    std::construct_at(&new_Elems[i + 1], std::move(_Elems[i]));
-
-                std::destroy_n(_Elems, _Count);
-                _Alloc.deallocate(_Elems, _Capacity);
-
+                _Release();
                 _Capacity *= 2;
                 _Elems = new_Elems;
             }
             else
-                std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count + 1]);
+            {
+                std::construct_at(&_Elems[_Count]);
+                std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count]);
+                _Elems[index] = std::move(what);
+            }
 
-            std::construct_at(&_Elems[index], std::move(what));
             _Count++;
         }
 
@@ -425,7 +447,8 @@ namespace CQue
         {
             std::destroy_at(&_Elems[index]);
             std::construct_at(&_Elems[index]);
-            std::move(&_Elems[index + 1], &_Elems[_Count--], &_Elems[index]);
+            std::move(&_Elems[index + 1], &_Elems[_Count], &_Elems[index]);
+            std::destroy_at(&_Elems[_Count--]);
         }
         else
             throw std::out_of_range("where");
@@ -437,8 +460,7 @@ namespace CQue
         if (index + count <= _Count)
         {
             std::destroy_n(&_Elems[index], count);
-            for (std::size_t i = index; i < index + count; i++)
-                std::construct_at(&_Elems[i]);
+            UninitializedDefaultConstruct(&_Elems[index], count);
 
             std::move(&_Elems[index + count], &_Elems[_Count], &_Elems[index]);
             _Count -= count;
@@ -451,9 +473,9 @@ namespace CQue
     constexpr void List<T, Allocator>::Resize(std::size_t n) noexcept
     { 
         if (n < _Count)
-            std::destroy_n(&_Elems[n], _Count -= n);
+            std::destroy_n(&_Elems[_Count - n], n);
             
-        _Reallocate(n);
+        _Reallocate(_Count = n);
     }
 
     template <class T, class Allocator>
@@ -480,9 +502,7 @@ namespace CQue
         if (add_count > _Capacity - _Count)
             _Reallocate(_Count * 2 + add_count);
         
-        for (std::size_t i = 0; i < add_count; i++)
-            std::construct_at(&_Elems[_Count + i], *(what.begin() + i));
-
+        UninitializedCopy(what.begin(), what.end(), &_Elems[_Count]);
         _Count += add_count;
     }
 
@@ -495,9 +515,7 @@ namespace CQue
         if (add_count > _Capacity - _Count)
             _Reallocate(_Count * 2 + add_count);
 
-        for (std::size_t i = 0; i < add_count; i++)
-            std::construct_at(&_Elems[_Count + i], std::move(*(what.begin() + i)));
-
+        UninitializedMove(what.begin(), what.end(), &_Elems[_Count]);
         _Count += add_count;
     }
 
@@ -533,29 +551,24 @@ namespace CQue
             // The move is split into two parts for more efficiency: items before the place of insertion and those after
             if (add_count > _Capacity - _Count)
             {
-                T* new_Elems = _Alloc.allocate(_Capacity = _Count * 2 + add_count);
+                T* new_Elems = _Alloc.allocate(_Count * 2 + add_count);
 
-                for (std::size_t i = 0; i < index; i++)
-                    std::construct_at(&new_Elems[i], std::move(_Elems[i]));
+                UninitializedMove(_Elems, &_Elems[index], new_Elems);
+                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[add_count]);
+                UninitializedCopy(what.begin(), what.end(), &new_Elems[index]);
 
-                for (std::size_t i = index; i < _Count; i++)
-                    std::construct_at(&new_Elems[i + add_count], &_Elems[i]);
-                
-                std::destroy_n(_Elems, _Count);
-                _Alloc.deallocate(_Elems, _Capacity);
-
+                _Release();
                 _Elems = new_Elems;
+                _Capacity = _Count * 2 + add_count;
             }
             // Otherwise, shift items after the place of insertion to give space for items that are to be added
             else
             {
-                for (std::size_t i = _Count; i < _Count + add_count; i++)
-                    std::construct_at(&_Elems[i]);
-
+                UninitializedDefaultConstruct(&_Elems[_Count], add_count);
                 std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count + add_count]);
+                std::copy(what.begin(), what.end(), &_Elems[index]);
             }
 
-            std::copy(what.begin(), what.end(), &_Elems[index]);
             _Count += add_count;
         }
         else
@@ -571,22 +584,29 @@ namespace CQue
         else if (index < _Count)
         {
             std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
+
+            // If the number of items to be added exceeds the remaining space, allocate a new chunk of memory and move the items
+            // The move is split into two parts for more efficiency: items before the place of insertion and those after
             if (add_count > _Capacity - _Count)
             {
-                T* new_Elems = _Alloc.allocate(_Capacity = _Count * 2 + add_count);
+                T* new_Elems = _Alloc.allocate(_Count * 2 + add_count);
 
-                std::move(_Elems, &_Elems[index], new_Elems);
-                std::move(&_Elems[index], &_Elems[_Count], &new_Elems[index + add_count]);
-                
-                std::destroy_n(_Elems, _Count);
-                _Alloc.deallocate(_Elems, _Capacity);
+                UninitializedMove(_Elems, &_Elems[index], new_Elems);
+                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[add_count]);
+                UninitializedCopy(what.begin(), what.end(), &new_Elems[index]);
 
+                _Release();
                 _Elems = new_Elems;
+                _Capacity = _Count * 2 + add_count;
             }
+            // Otherwise, shift items after the place of insertion to give space for items that are to be added
             else
+            {
+                UninitializedDefaultConstruct(&_Elems[_Count], add_count);
                 std::move_backward(&_Elems[index], &_Elems[_Count], &_Elems[_Count + add_count]);
+                std::move(what.begin(), what.end(), &_Elems[index]);
+            }
 
-            std::move(what.begin(), what.end(), &_Elems[index]);
             _Count += add_count;
         }
         else
@@ -624,8 +644,7 @@ namespace CQue
     {
         if (_Capacity < other._Count)
         {
-            std::destroy_n(_Elems, _Count);
-            _Alloc.deallocate(_Elems, _Capacity);
+            _Release();
             _Elems = _Alloc.allocate(_Capacity = other._Count);
         }
         else
@@ -645,10 +664,7 @@ namespace CQue
     constexpr List<T, Allocator>& List<T, Allocator>::operator=(List<T, Allocator>&& other)
     {
         if (_Elems)
-        {
-            std::destroy_n(_Elems, _Count);
-            _Alloc.deallocate(_Elems, _Capacity);
-        }
+            _Release();
 
         _Elems = std::exchange(other._Elems, nullptr);
         _Count = std::exchange(other._Count, 0);
@@ -660,13 +676,19 @@ namespace CQue
     template <class T, class Allocator>
     constexpr T& List<T, Allocator>::operator[](std::size_t index)
     {
-        return _Elems[index];
+        if (index < _Count)
+            return _Elems[index];
+        else
+            throw std::out_of_range("index");
     }
 
     template <class T, class Allocator>
     constexpr const T& List<T, Allocator>::operator[](std::size_t index) const
     {
-        return _Elems[index];
+        if (index < _Count)
+            return _Elems[index];
+        else
+            throw std::out_of_range("index");
     }
 
     template <class T, class Allocator>
@@ -690,30 +712,33 @@ namespace CQue
     template <class T, class Allocator>
     constexpr List<T, Allocator>::~List() noexcept(std::is_nothrow_destructible_v<T>)
     {
-        std::destroy_n(_Elems, _Count);
-        _Alloc.deallocate(_Elems, _Capacity);
+        _Release();
     }
 
     // List<T, Allocator> - Protected Member Functions
 
     template <class T, class Allocator>
-    constexpr void List<T, Allocator>::_Reallocate(std::size_t new_capacity) noexcept(std::is_nothrow_move_assignable_v<T>)
+    constexpr void List<T, Allocator>::_Reallocate(std::size_t new_capacity) noexcept(std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>)
     {
         if (_Capacity == 0)
             _Elems = _Alloc.allocate(new_capacity);
         else if (_Capacity != new_capacity)
         {
             T* new_Elems = _Alloc.allocate(new_capacity);
+            UninitializedMove(_Elems, &_Elems[_Count], new_Elems);
 
-            for (std::size_t i = 0; i < _Count; i++)
-                std::construct_at(&new_Elems[i], std::move(_Elems[i]));
-
-            std::destroy_n(_Elems, _Count);
-            _Alloc.deallocate(_Elems, _Capacity);
-
+            _Release();
             _Elems = new_Elems;
         }
+
         _Capacity = new_capacity;
+    }
+
+    template <class T, class Allocator>
+    constexpr void List<T, Allocator>::_Release() noexcept(std::is_nothrow_destructible_v<T>)
+    {
+        std::destroy_n(_Elems, _Count);
+        _Alloc.deallocate(_Elems, _Capacity);
     }
 
     template <class T, class Allocator>
