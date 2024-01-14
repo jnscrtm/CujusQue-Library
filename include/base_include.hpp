@@ -66,7 +66,7 @@ namespace CQue
     }
 
     template <class T, class _Val>
-    concept Iterable = requires(T a) 
+    concept IterableObjectOf = requires(T a) 
     {
         { a.begin() } -> std::random_access_iterator;
         { a.end() } -> std::same_as<decltype(a.begin())>;
@@ -74,24 +74,15 @@ namespace CQue
     };
 
     template <class T>
+    concept Iterable = requires(T a)
+    {
+        { a.begin() } -> std::random_access_iterator;
+        { a.end() } -> std::same_as<decltype(a.begin())>;
+    };
+
+    template <class T>
     using Predicate = bool(*)(T);
 
     template <class T>
     using Comparison = std::partial_ordering(*)(const T& a, const T& b);
-
-
-
-    template <class T>
-    concept DefaultConstEvaluable = is_default_constexpr_declarable<T>;
-
-    template <class T>
-    concept CopyDefaultConstEvaluable = is_copy_default_constexpr_declarable<T>;
-
-    template <class T>
-    concept MoveDefaultConstEvaluable = is_move_default_constexpr_declarable<T>;
-
-
-
-    template <class T>
-    concept ConstEvaluable = DefaultConstEvaluable<T> && CopyDefaultConstEvaluable<T> && MoveDefaultConstEvaluable<T>;
 };

@@ -217,23 +217,19 @@ private:
 public:
 	constexpr Foo() noexcept : a(0) {}
 	constexpr Foo(int i) : a(i) {}
-	Foo(const Foo&) {}
 };
-
 
 
 int main()
 {
-	constexpr auto what = []() -> auto {
-		CQue::List<int> lst = std::initializer_list<int>{1, 2, 3};
-		lst.Insert(0, 20);
-		lst.Insert(0, 20);
-		lst.Insert(0, 20);
-		lst.Insert(0, 20);
-		lst.Insert(0, 30);
+	constexpr auto eval = []() {
+		SimpleList<int> lst = std::initializer_list<int> { 1, 4, 3, 4 };
+		lst.Sort();
 		return lst[0];
+
 		}();
 
+		return 0;
 #ifdef _MSC_VER
 	std::cout << "(Windows 11, MSVC x64, /O2 Optimized)\n\n";
 #elif defined(__GNUC__)
