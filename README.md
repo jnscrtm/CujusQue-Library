@@ -22,5 +22,3 @@ Provides methods to deal with containers. Not restricted to `CQue` container cla
 Binds to the iterators of the given iterable object as specified by `CQue::IterableObjectOf<T, _Val>` concept. Termed "naive" because it can only wrap around an iterable object whose iterators are convertible to raw pointers. `constexpr`-friendly.
 ### 2.2. Contiguous Container (`class CQue::List<T, Allocator>`)
 A contiguous, array-based collection equipped with indexer and some helper methods, e.g. sorting, searching, etc. Due to its nature, `List<T, Allocator>` can only accept objects that are default initializable, copyable, and movable. `Allocator` is defaulted to `std::allocator<T>`. `constexpr`-friendly.
-#### The Simpler Mechanism (`class CQue::SimpleList<T>`)
-Similar to `CQue::List<T, Allocator>` except that `CQue::SimpleList<T>` does not use an allocator and instead uses `new[]` and `delete[]` operators directly. The type hence implicitly also needs to be default-initializable. Recommended for types whose sizes are effectifely fixed and which have no dynamic allocation involved, otherwise unrecommended as some things may lead to undefined behaviours or even fatal errors.
