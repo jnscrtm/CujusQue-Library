@@ -222,8 +222,6 @@ int main()
 		return lst[0];
 		}();
 
-		CQue::NonAllocator<int> na;
-
 #ifdef _MSC_VER
 	std::cout << "(Windows 11, MSVC x64, /O2 Optimized)\n\n";
 #elif defined(__GNUC__)
