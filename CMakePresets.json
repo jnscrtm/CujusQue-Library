@@ -1,4 +1,4 @@
-﻿{
+{
     "version": 3,
     "configurePresets": [
         {
@@ -53,6 +53,26 @@
             "name": "x86-release",
             "displayName": "x86 Release",
             "inherits": "x86-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "win-gcc-debug-x64",
+            "displayName": "Windows GCC x64 Debug",
+            "generator": "MinGW Makefiles",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_MAKE_PROGRAM": "mingw32-make",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_CXX_COMPILER": "g++.exe",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+            }
+        },
+        {
+            "name": "win-gcc-release-x64",
+            "displayName": "Windows GCC x64 Release",
+            "inherits": "win-gcc-debug-x64",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }

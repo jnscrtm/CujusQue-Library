@@ -18,12 +18,16 @@ namespace CQue
         constexpr List(List<T, Allocator>&& other) noexcept;
 
         constexpr List(std::size_t initial_size) noexcept(std::is_nothrow_default_constructible_v<T>) requires std::default_initializable<T>;
+        constexpr List(std::initializer_list<T> lst) noexcept(std::is_nothrow_copy_constructible_v<T>);
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr List(const _It& lst) noexcept(std::is_nothrow_copy_constructible_v<T>);
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr List(_It&& lst) noexcept(std::is_nothrow_move_constructible_v<T>);
+
+        template <std::forward_iterator _It>
+        constexpr List(_It first, _It last) noexcept(std::is_nothrow_copy_constructible_v<T>);
 
         // Non-Template Member Functions
 
@@ -52,22 +56,22 @@ namespace CQue
 
         // Template Member Functions
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr void AddRange(const _It& what) noexcept(std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_move_assignable_v<T>);
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr void AddRange(_It&& what) noexcept(std::is_nothrow_move_assignable_v<T>);
 
         template <class TOutput>
         constexpr List<TOutput> ConvertAll(Converter<T, TOutput> converter = &DefaultConvert<T, TOutput>) const;
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr void CopyTo(_It& where) const noexcept(std::is_nothrow_copy_assignable_v<T>);
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr void InsertRange(std::size_t index, const _It& what);
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr void InsertRange(std::size_t index, _It&& what);
 
         // Iterators
@@ -131,7 +135,16 @@ namespace CQue
     }
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    constexpr List<T, Allocator>::List(std::initializer_list<T> lst) noexcept(std::is_nothrow_copy_constructible_v<T>)
+    {
+        _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
+        _Elems = _Alloc.allocate(_Capacity);
+
+        UninitializedCopy(lst.begin(), lst.end(), _Elems);
+    }
+
+    template <class T, class Allocator>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr List<T, Allocator>::List(const _It& lst) noexcept(std::is_nothrow_copy_constructible_v<T>)
     {
         _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
@@ -141,13 +154,23 @@ namespace CQue
     }
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr List<T, Allocator>::List(_It&& lst) noexcept(std::is_nothrow_move_constructible_v<T>)
     {
         _Capacity = _Count = static_cast<std::size_t>(lst.end() - lst.begin());
         _Elems = _Alloc.allocate(_Capacity);
 
         UninitializedMove(lst.begin(), lst.end(), _Elems);
+    }
+
+    template <class T, class Allocator>
+    template <std::forward_iterator _It>
+    constexpr List<T, Allocator>::List(_It first, _It last) noexcept(std::is_nothrow_copy_constructible_v<T>)
+    {
+        _Capacity = _Count = static_cast<std::size_t>(last - first);
+        _Elems = _Alloc.allocate(_Capacity);
+
+        UninitializedCopy(first, last, _Elems);
     }
 
     // List<T, Allocator> - Non-Template Member Functions
@@ -395,7 +418,7 @@ namespace CQue
     // List<T, Allocator> - Template Member Functions
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr void List<T, Allocator>::AddRange(const _It& what) noexcept(std::is_nothrow_copy_assignable_v<T>&& std::is_nothrow_move_assignable_v<T>)
     {
         std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
@@ -408,7 +431,7 @@ namespace CQue
     }
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr void List<T, Allocator>::AddRange(_It&& what) noexcept(std::is_nothrow_move_assignable_v<T>)
     {
         std::size_t add_count = static_cast<std::size_t>(what.end() - what.begin());
@@ -432,14 +455,14 @@ namespace CQue
     }
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr void List<T, Allocator>::CopyTo(_It& where) const noexcept(std::is_nothrow_copy_assignable_v<T>)
     {
         std::copy(_Elems, &_Elems[_Count], where.begin());
     }
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr void List<T, Allocator>::InsertRange(std::size_t index, const _It& what)
     {
         if (index == _Count)
@@ -477,7 +500,7 @@ namespace CQue
     }
 
     template <class T, class Allocator>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr void List<T, Allocator>::InsertRange(std::size_t index, _It&& what)
     {
         if (index == _Count)

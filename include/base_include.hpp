@@ -65,20 +65,52 @@ namespace CQue
         return static_cast<std::partial_ordering>(a <=> b);
     }
 
-    template <class T, class _Val>
-    concept IterableObjectOf = requires(T a) 
+    
+
+    template <class T>
+    concept BidirectionalIterable = requires(T a)
     {
-        { a.begin() } -> std::random_access_iterator;
+        { a.begin() } -> std::bidirectional_iterator;
         { a.end() } -> std::same_as<decltype(a.begin())>;
+    };
+
+    template <class T, class _Val>
+    concept BidirectionalIterableObjectOf = BidirectionalIterable<T> && requires(T a) 
+    {
         { *(a.begin()) } -> DecayedSameAs<_Val>;
     };
 
     template <class T>
-    concept Iterable = requires(T a)
+    concept ForwardIterable = requires(T a)
+    {
+        { a.begin() } -> std::forward_iterator;
+        { a.end() } -> std::same_as<decltype(a.begin())>;
+    };
+
+    template <class T, class _Val>
+    concept ForwardIterableObjectOf = ForwardIterable<T> && requires(T a) 
+    {
+        { *(a.begin()) } -> DecayedSameAs<_Val>;
+    };
+
+    template <class T>
+    concept RandomAccessIterable = requires(T a)
     {
         { a.begin() } -> std::random_access_iterator;
         { a.end() } -> std::same_as<decltype(a.begin())>;
     };
+
+    template <class T, class _Val>
+    concept RandomAccessIterableObjectOf = RandomAccessIterable<T> && requires(T a) 
+    {
+        { *(a.begin()) } -> DecayedSameAs<_Val>;
+    };
+
+    template <class T>
+    concept Iterable = ForwardIterable<T> || BidirectionalIterable<T> || RandomAccessIterable<T>;
+
+    template <class T, class _Val>
+    concept IterableObjectOf = ForwardIterableObjectOf<T, _Val> || BidirectionalIterableObjectOf<T, _Val> || RandomAccessIterableObjectOf<T, _Val>;
 
     template <class T>
     using Predicate = bool(*)(T);

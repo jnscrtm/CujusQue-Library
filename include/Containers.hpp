@@ -6,34 +6,34 @@
 
 namespace CQue::Container
 {
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr bool Exists(const _Container& container, Predicate<const T&> match);
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr T Find(const _Container& container, Predicate<const T&> match);
 
-    template <class T, IterableObjectOf<T> _Container, IterableObjectOf<T> _OutputContainer = _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container, ForwardIterableObjectOf<T> _OutputContainer = _Container>
     constexpr _OutputContainer FindAll(const _Container& container, Predicate<const T&> match);
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr std::size_t FindIndex(const _Container& container, Predicate<const T&> match);
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr T FindLast(const _Container& container, Predicate<const T&> match);
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr std::size_t FindLastIndex(const _Container& container, Predicate<const T&> match);
 
-    template <std::equality_comparable T, IterableObjectOf<T> _Container>
+    template <std::equality_comparable T, ForwardIterableObjectOf<T> _Container>
     constexpr std::size_t IndexOf(const _Container& container, const T& what) noexcept(noexcept(std::declval<T>() == std::declval<T>()));
 
-    template <std::equality_comparable T, IterableObjectOf<T> _Container>
+    template <std::equality_comparable T, BidirectionalIterableObjectOf<T> _Container>
     constexpr std::size_t LastIndexOf(const _Container& container, const T& what) noexcept(noexcept(std::declval<T>() == std::declval<T>()));
 
-    template <Iterable _Container>
+    template <RandomAccessIterable _Container>
     constexpr void Reverse(_Container& container);
 
-    template <Iterable _Container, class T = std::decay_t<decltype(*std::declval<_Container>().begin())>>
+    template <RandomAccessIterable _Container, class T = std::decay_t<decltype(*std::declval<_Container>().begin())>>
     constexpr void Sort(_Container& container, Comparison<T> compare = &DefaultCompare<T>);
 };
 
@@ -59,7 +59,7 @@ namespace CQue
 
         constexpr IterWrapper(T* first, T* last) noexcept;
 
-        template <IterableObjectOf<T> _It>
+        template <ForwardIterableObjectOf<T> _It>
         constexpr IterWrapper(const _It& iter) noexcept;
 
         // Iterators
@@ -75,39 +75,38 @@ namespace CQue
 
 namespace CQue::Container
 {
-    template <std::equality_comparable T, IterableObjectOf<T> _Container>
+    template <std::equality_comparable T, ForwardIterableObjectOf<T> _Container>
     constexpr bool Exists(const _Container& container, Predicate<const T&> match)
     {
-        for (std::size_t i = 0; i < static_cast<std::size_t>(container.end() - container.begin()); i++)
-            if (match(*(container.begin() + i)))
-                return true;
+        for(const auto& x : container)
+            if(match(x)) return true;
 
         return false;
     }
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr T Find(const _Container& container, Predicate<const T&> match)
     {
-        for (std::size_t i = 0; i < static_cast<std::size_t>(container.end() - container.begin()); i++)
-            if (match(*(container.begin() + i)))
-                return *(container.begin() + i);
+        for(const auto& x : container)
+            if(match(x)) return x;
 
         return T();
     }
 
-    template <class T, IterableObjectOf<T> _Container, IterableObjectOf<T> _OutputContainer>
+    template <class T, ForwardIterableObjectOf<T> _Container, ForwardIterableObjectOf<T> _OutputContainer>
     constexpr _OutputContainer FindAll(const _Container& container, Predicate<const T&> match)
     {
         std::size_t full_size = static_cast<std::size_t>(container.end() - container.begin());
 
         T* _Tmp = std::allocator<T>{}.allocate(full_size);
-        std::size_t nfound = 0;
 
-        for (std::size_t i = 0; i < static_cast<std::size_t>(container.end() - container.begin()); i++)
-            if (match(*(container.begin() + i)))
-                std::construct_at(&_Tmp[nfound++], *(container.begin() + i));
+        std::size_t nfound = 0;
+        for(const auto& x : container)
+            if(match(x))
+                std::construct_at(&_Tmp[nfound++], x);
 
         _OutputContainer out;
+
         if constexpr (std::is_constructible_v<_OutputContainer, T*, T*>)
             out = _OutputContainer(_Tmp, &_Tmp[nfound]);
         else
@@ -120,7 +119,7 @@ namespace CQue::Container
         return out;
     }
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr std::size_t FindIndex(const _Container& container, Predicate<const T&> match)
     {
         for (std::size_t i = 0; i < static_cast<std::size_t>(container.end() - container.begin()); i++)
@@ -130,7 +129,7 @@ namespace CQue::Container
         return (std::size_t)(-1);
     }
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, ForwardIterableObjectOf<T> _Container>
     constexpr T FindLast(const _Container& container, Predicate<const T&> match)
     {
         std::size_t count = static_cast<std::size_t>(container.end() - container.begin());
@@ -141,28 +140,27 @@ namespace CQue::Container
         return T();
     }
 
-    template <class T, IterableObjectOf<T> _Container>
+    template <class T, BidirectionalIterableObjectOf<T> _Container>
     constexpr std::size_t FindLastIndex(const _Container& container, Predicate<const T&> match)
     {
-        std::size_t count = static_cast<std::size_t>(container.end() - container.begin());
-        for (std::size_t i = 0; i < count; i++)
-            if (match(*(container.begin() + count - i - 1)))
-                return count - i - 1;
+        for (auto iterator = container.end()-1; iterator >= container.begin(); iterator--)
+            if (match(*iterator))
+                return static_cast<std::size_t>(iterator - container.begin());
 
         return (std::size_t)(-1);
     }
 
-    template <std::equality_comparable T, IterableObjectOf<T> _Iterable>
-    constexpr std::size_t IndexOf(const _Iterable& lst, const T& what) noexcept(noexcept(std::declval<T>() == std::declval<T>()))
+    template <std::equality_comparable T, ForwardIterableObjectOf<T> _Iterable>
+    constexpr std::size_t IndexOf(const _Iterable& container, const T& what) noexcept(noexcept(std::declval<T>() == std::declval<T>()))
     {
-        for (std::size_t i = 0; i < static_cast<std::size_t>(lst.end() - lst.begin()); i++)
-            if (*(lst.begin() + i) == what)
-                return i;
+        for(auto iterator = container.begin(); iterator < container.end(); iterator++)
+            if(*iterator == what)
+                return static_cast<std::size_t>(iterator - container.begin());
 
         return (std::size_t)(-1);
     }
 
-    template <std::equality_comparable T, IterableObjectOf<T> _Iterable>
+    template <std::equality_comparable T, ForwardIterableObjectOf<T> _Iterable>
     constexpr std::size_t LastIndexOf(const _Iterable& lst, const T& what) noexcept(noexcept(std::declval<T>() == std::declval<T>()))
     {
         std::size_t count = static_cast<std::size_t>(lst.end() - lst.begin());
@@ -173,7 +171,7 @@ namespace CQue::Container
         return (std::size_t)(-1);
     }
 
-    template <Iterable _Container>
+    template <RandomAccessIterable _Container>
     constexpr void Reverse(_Container& container)
     {
         std::size_t count = static_cast<std::size_t>(container.end() - container.begin());
@@ -182,7 +180,7 @@ namespace CQue::Container
             *(container.begin() + i) = std::exchange(*(container.begin() + count - i - 1), *(container.begin() + i));
     }
 
-    template <Iterable _Container, class T>
+    template <RandomAccessIterable _Container, class T>
     constexpr void Sort(_Container& container, Comparison<T> compare)
     {
         std::size_t end = static_cast<std::size_t>(container.end() - container.begin());
@@ -255,7 +253,7 @@ namespace CQue
     constexpr IterWrapper<T>::IterWrapper(T* first, T* last) noexcept : _First(first), _Last(last) {}
 
     template <class T>
-    template <IterableObjectOf<T> _It>
+    template <ForwardIterableObjectOf<T> _It>
     constexpr IterWrapper<T>::IterWrapper(const _It& iter) noexcept : _First((T*)iter.begin()), _Last((T*)iter.end()) {}
 
     // IterWrapper<T> - Iterators
