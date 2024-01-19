@@ -478,7 +478,7 @@ namespace CQue
                 T* new_Elems = _Alloc.allocate(_Count * 2 + add_count);
 
                 UninitializedMove(_Elems, &_Elems[index], new_Elems);
-                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[add_count]);
+                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[index + add_count]);
                 UninitializedCopy(what.begin(), what.end(), &new_Elems[index]);
 
                 _Release();
@@ -516,7 +516,7 @@ namespace CQue
                 T* new_Elems = _Alloc.allocate(_Count * 2 + add_count);
 
                 UninitializedMove(_Elems, &_Elems[index], new_Elems);
-                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[add_count]);
+                UninitializedMove(&_Elems[index], &_Elems[_Count], &new_Elems[index + add_count]);
                 UninitializedCopy(what.begin(), what.end(), &new_Elems[index]);
 
                 _Release();

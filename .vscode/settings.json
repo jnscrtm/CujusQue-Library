@@ -73,5 +73,6 @@
         "xstring": "cpp",
         "xtr1common": "cpp",
         "xutility": "cpp"
-    }
+    },
+    "C_Cpp.default.compilerPath": "C:\\ProgramData\\mingw64\\mingw64\\bin\\g++.exe"
 }
